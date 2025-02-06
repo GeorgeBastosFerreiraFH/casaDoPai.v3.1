@@ -230,10 +230,10 @@ class DashboardManager {
                 <h2 class="text-2xl font-bold mb-4 text-center">Meu Perfil</h2>
                 <div class="card bg-base-100 shadow-xl w-full max-w-2xl">
                     <div class="card-body">
-                        <h3 class="card-title">${usuario.nomeCompleto}</h3>
+                        <h3 class="card-title">${usuario.nomecompleto}</h3>
                         <p>Email: ${usuario.email}</p>
                         <p>Telefone: ${usuario.telefone}</p>
-                        <p>Célula: ${usuario.nomeCelula || "Não participa"}</p>
+                        <p>Célula: ${usuario.nomecelula || "Não participa"}</p>
                         <div class="card-actions justify-end mt-2">
                             <button class="btn btn-primary btn-sm btn-detalhes" data-id="${
                               usuario.id
@@ -251,12 +251,12 @@ class DashboardManager {
     return `
             <div class="card bg-base-100 shadow-xl user-card">
                 <div class="card-body">
-                    <h3 class="card-title">${usuario.nomeCompleto}</h3>
+                    <h3 class="card-title">${usuario.nomecompleto}</h3>
                     <p>Email: ${usuario.email}</p>
                     <p>Tipo: ${this.formatarTipoUsuario(
                       usuario.tipoUsuario
                     )}</p>
-                    <p>Célula: ${usuario.nomeCelula || "Não associado"}</p>
+                    <p>Célula: ${usuario.nomecelula || "Não associado"}</p>
                     <div class="card-actions justify-end mt-2">
                         <button class="btn btn-primary btn-sm btn-detalhes" data-id="${
                           usuario.id
@@ -307,7 +307,7 @@ class DashboardManager {
 
   preencherDetalhesUsuario(usuario) {
     if (this.modalTitle) {
-      this.modalTitle.textContent = `Detalhes de ${usuario.nomeCompleto}`;
+      this.modalTitle.textContent = `Detalhes de ${usuario.nomecompleto}`;
     }
 
     const conteudoModal = document.querySelector(
@@ -329,14 +329,14 @@ class DashboardManager {
         ? new Date(usuario.dataNascimento).toLocaleDateString()
         : "Não disponível",
       "#detalhesTipoUsuario": this.formatarTipoUsuario(usuario.tipoUsuario),
-      "#detalhesConcluiuBatismo": usuario.concluiuBatismo ? "Sim" : "Não",
-      "#detalhesParticipouCafe": usuario.participouCafe ? "Sim" : "Não",
-      "#detalhesParticipaMinisterio": usuario.participaMinisterio
+      "#detalhesConcluiuBatismo": usuario.concluiubatismo ? "Sim" : "Não",
+      "#detalhesParticipouCafe": usuario.participoucafe ? "Sim" : "Não",
+      "#detalhesParticipaMinisterio": usuario.participaministerio
         ? "Sim"
         : "Não",
-      "#detalhesMinisterio": usuario.nomeMinisterio || "Não participa",
-      "#detalhesParticipaCelula": usuario.participaCelula ? "Sim" : "Não",
-      "#detalhesCelula": usuario.nomeCelula || "Não participa",
+      "#detalhesMinisterio": usuario.nomeministerio || "Não participa",
+      "#detalhesParticipaCelula": usuario.participacelula ? "Sim" : "Não",
+      "#detalhesCelula": usuario.nomecelula || "Não participa",
     };
 
     Object.entries(campos).forEach(([selector, value]) => {
@@ -351,14 +351,14 @@ class DashboardManager {
 
     listaCursos.innerHTML = "";
     const cursos = [
-      { id: "cursoMeuNovoCaminho", nome: "Meu Novo Caminho" },
-      { id: "cursoVidaDevocional", nome: "Vida Devocional" },
-      { id: "cursoFamiliaCrista", nome: "Família Cristã" },
-      { id: "cursoVidaProsperidade", nome: "Vida de Prosperidade" },
-      { id: "cursoPrincipiosAutoridade", nome: "Princípios de Autoridade" },
-      { id: "cursoVidaEspirito", nome: "Vida no Espírito" },
-      { id: "cursoCaraterCristo", nome: "Caráter de Cristo" },
-      { id: "cursoIdentidadesRestauradas", nome: "Identidades Restauradas" },
+      { id: "cursomeunovocaminho", nome: "Meu Novo Caminho" },
+      { id: "cursovidadevocional", nome: "Vida Devocional" },
+      { id: "cursofamiliacrista", nome: "Família Cristã" },
+      { id: "cursovidaprosperidade", nome: "Vida de Prosperidade" },
+      { id: "cursoprincipiosautoridade", nome: "Princípios de Autoridade" },
+      { id: "cursovidaespirito", nome: "Vida no Espírito" },
+      { id: "cursocaratercristo", nome: "Caráter de Cristo" },
+      { id: "cursoidentidadesrestauradas", nome: "Identidades Restauradas" },
     ];
 
     cursos.forEach((curso) => {
@@ -375,7 +375,7 @@ class DashboardManager {
     if (
       this.tipoUsuarioAtual === "Administrador" ||
       (this.tipoUsuarioAtual === "LiderCelula" &&
-        usuario.tipoUsuario !== "Administrador")
+        usuario.tipousuario !== "Administrador")
     ) {
       let botoesHTML = `
                 <button class="btn btn-primary btn-sm mr-2" onclick="editarUsuario(${usuario.id})">Editar</button>
@@ -384,15 +384,15 @@ class DashboardManager {
 
       if (this.tipoUsuarioAtual === "Administrador") {
         if (
-          usuario.tipoUsuario !== "Administrador" &&
-          usuario.tipoUsuario !== "LiderCelula"
+          usuario.tipousuario !== "Administrador" &&
+          usuario.tipousuario !== "LiderCelula"
         ) {
           botoesHTML += `
                         <button class="btn btn-info btn-sm" onclick="tornarLider(${usuario.id})">
                             Tornar Líder
                         </button>
                     `;
-        } else if (usuario.tipoUsuario === "LiderCelula") {
+        } else if (usuario.tipousuario === "LiderCelula") {
           botoesHTML += `
                         <button class="btn btn-warning btn-sm" onclick="rebaixarLider(${usuario.id})">
                             Rebaixar para Usuário Comum
@@ -417,7 +417,7 @@ class DashboardManager {
       );
       const usuario = await response.json();
 
-      this.modalTitle.textContent = `Editar ${usuario.nomeCompleto}`;
+      this.modalTitle.textContent = `Editar ${usuario.nomecompleto}`;
       this.modalContent.innerHTML = this.gerarFormularioEdicao(usuario);
 
       const form = document.querySelector("#formEditarUsuario");
@@ -445,7 +445,7 @@ class DashboardManager {
                             <span class="label-text">Nome Completo</span>
                         </label>
                         <input type="text" id="editNomeCompleto" class="input input-bordered" 
-                            value="${usuario.nomeCompleto}" required
+                            value="${usuario.nomecompleto}" required
                             onchange="this.classList.remove('input-error')">
                     </div>
                     <div class="form-control">
@@ -483,35 +483,35 @@ class DashboardManager {
                         </label>
                         <select id="editMinisterio" class="select select-bordered">
                             <option value="" ${
-                              usuario.nomeMinisterio ? "" : "selected"
+                              usuario.nomeministerio ? "" : "selected"
                             }>Não participa</option>
                             <option value="Acolhimento" ${
-                              usuario.nomeMinisterio === "Acolhimento"
+                              usuario.nomeministerio === "Acolhimento"
                                 ? "selected"
                                 : ""
                             }>Acolhimento</option>
                             <option value="Mídias" ${
-                              usuario.nomeMinisterio === "Mídias"
+                              usuario.nomeministerio === "Mídias"
                                 ? "selected"
                                 : ""
                             }>Mídias</option>
                             <option value="Louvor" ${
-                              usuario.nomeMinisterio === "Louvor"
+                              usuario.nomeministerio === "Louvor"
                                 ? "selected"
                                 : ""
                             }>Louvor</option>
                             <option value="Dança" ${
-                              usuario.nomeMinisterio === "Dança"
+                              usuario.nomeministerio === "Dança"
                                 ? "selected"
                                 : ""
                             }>Dança</option>
                             <option value="Infantil" ${
-                              usuario.nomeMinisterio === "Infantil"
+                              usuario.nomeministerio === "Infantil"
                                 ? "selected"
                                 : ""
                             }>Infantil</option>
                             <option value="Teens" ${
-                              usuario.nomeMinisterio === "Teens"
+                              usuario.nomeministerio === "Teens"
                                 ? "selected"
                                 : ""
                             }>Teens</option>
@@ -524,9 +524,9 @@ class DashboardManager {
                         </label>
                         <select id="editCelula" class="select select-bordered">
                             <option value="" ${
-                              usuario.idCelula ? "" : "selected"
+                              usuario.idcelula ? "" : "selected"
                             }>Não participa</option>
-                            ${this.gerarOpcoesCelulas(usuario.idCelula)}
+                            ${this.gerarOpcoesCelulas(usuario.idcelula)}
                         </select>
                     </div>
 
@@ -534,7 +534,7 @@ class DashboardManager {
                         <label class="label cursor-pointer">
                             <span class="label-text">Concluiu Batismo</span> 
                             <input type="checkbox" id="editConcluiuBatismo" class="checkbox" ${
-                              usuario.concluiuBatismo ? "checked" : ""
+                              usuario.concluiubatismo ? "checked" : ""
                             }>
                         </label>
                     </div>
@@ -612,13 +612,13 @@ class DashboardManager {
     try {
       this.mostrarLoading();
       const dadosAtualizados = {
-        nomeCompleto: campos.nomeCompleto.value,
+        nomeCompleto: campos.nomecompleto.value,
         email: campos.email.value,
         telefone: campos.telefone.value,
         dataNascimento: campos.dataNascimento.value,
         nomeMinisterio: campos.ministerio.value,
         idCelula: campos.celula.value,
-        concluiuBatismo: campos.concluiuBatismo.checked,
+        concluiuBatismo: campos.concluiubatismo.checked,
       };
 
       const response = await this.fetchComTimeout(
@@ -715,7 +715,7 @@ class DashboardManager {
       );
       const usuario = await verificacaoResponse.json();
 
-      if (!usuario.idCelula) {
+      if (!usuario.idcelula) {
         mostrarToast(
           "O usuário precisa estar associado a uma célula para se tornar líder",
           "error"
@@ -723,7 +723,7 @@ class DashboardManager {
         return;
       }
 
-      if (usuario.tipoUsuario === "LiderCelula") {
+      if (usuario.tipousuario === "LiderCelula") {
         mostrarToast("Este usuário já é líder de célula", "warning");
         return;
       }
@@ -777,7 +777,7 @@ class DashboardManager {
       );
       const usuario = await verificacaoResponse.json();
 
-      if (usuario.tipoUsuario !== "LiderCelula") {
+      if (usuario.tipousuario !== "LiderCelula") {
         mostrarToast("Este usuário não é um líder de célula", "warning");
         return;
       }
@@ -915,7 +915,7 @@ class DashboardManager {
       const usuario = await response.json();
 
       if (this.modalTitle) {
-        this.modalTitle.textContent = `Editar ${usuario.nomeCompleto}`;
+        this.modalTitle.textContent = `Editar ${usuario.nomecompleto}`;
       }
 
       if (this.modalContent) {

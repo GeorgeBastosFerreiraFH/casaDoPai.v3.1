@@ -325,8 +325,8 @@ class DashboardManager {
     const campos = {
       "#detalhesEmail": usuario.email,
       "#detalhesTelefone": usuario.telefone,
-      "#detalhesDataNascimento": usuario.dataNascimento
-        ? new Date(usuario.dataNascimento).toLocaleDateString()
+      "#detalhesDataNascimento": usuario.datanascimento
+        ? new Date(usuario.datanascimento).toLocaleDateString()
         : "Não disponível",
       "#detalhesTipoUsuario": this.formatarTipoUsuario(usuario.tipousuario),
       "#detalhesConcluiuBatismo": usuario.concluiubatismo ? "Sim" : "Não",
@@ -470,7 +470,7 @@ class DashboardManager {
                         </label>
                         <input type="date" id="editDataNascimento" class="input input-bordered" 
                             value="${
-                              new Date(usuario.dataNascimento)
+                              new Date(usuario.datanascimento)
                                 .toISOString()
                                 .split("T")[0]
                             }" required
@@ -615,7 +615,7 @@ class DashboardManager {
         nomeCompleto: campos.nomecompleto.value,
         email: campos.email.value,
         telefone: campos.telefone.value,
-        dataNascimento: campos.dataNascimento.value,
+        dataNascimento: campos.datanascimento.value,
         nomeMinisterio: campos.ministerio.value,
         idCelula: campos.celula.value,
         concluiuBatismo: campos.concluiubatismo.checked,

@@ -1,4 +1,3 @@
-import { carregarDashboard } from "./dashboard.js";
 import {
   mostrarToast,
   mostrarElemento,
@@ -6,671 +5,299 @@ import {
   salvarEstadoFormulario,
   getEstadoFormulario,
 } from "./utils.js";
-import { storageManager } from "./storagemanager.js";
 
-function togglePasswordVisibility(passwordInput, toggleButton) {
-  // Alterna entre mostrar e esconder a senha
-  const isPasswordVisible = passwordInput.type === "text";
-  passwordInput.type = isPasswordVisible ? "password" : "text";
-
-  // Seleciona o SVG dentro do botão
-  const svgIcon = toggleButton.querySelector("svg");
-
-  if (isPasswordVisible) {
-    // Quando a senha está visível, adiciona a linha diagonal
-    svgIcon.innerHTML = `
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-        `;
-  } else {
-    // Quando a senha está escondida, remove a linha diagonal
-    svgIcon.innerHTML = `
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        `;
-  }
-}
-
-// Adiciona event listeners para os campos de senha
-document.addEventListener("DOMContentLoaded", () => {
-  // Login
-  const toggleSenhaLogin = document.getElementById("toggleSenhaLogin");
-  const senhaLogin = document.getElementById("senhalogin");
-
-  toggleSenhaLogin.addEventListener("click", () => {
-    togglePasswordVisibility(senhaLogin, toggleSenhaLogin);
-  });
-
-  // Cadastro - Senha
-  const toggleSenhaCadastro = document.getElementById("toggleSenhaCadastro");
-  const senhaCadastro = document.getElementById("senhaCadastro");
-
-  toggleSenhaCadastro.addEventListener("click", () => {
-    togglePasswordVisibility(senhaCadastro, toggleSenhaCadastro);
-  });
-
-  // Cadastro - Confirmar Senha
-  const toggleConfirmeSenhaCadastro = document.getElementById(
-    "toggleConfirmeSenhaCadastro"
-  );
-  const confirmeSenhaCadastro = document.getElementById(
-    "confirmeSenhaCadastro"
-  );
-
-  toggleConfirmeSenhaCadastro.addEventListener("click", () => {
-    togglePasswordVisibility(
-      confirmeSenhaCadastro,
-      toggleConfirmeSenhaCadastro
-    );
-  });
-});
-
-class FormManager {
+class DashboardManager {
   constructor() {
     this.inicializarElementos();
-    this.inicializarEventos();
-    this.configurarToastr();
-    this.verificarEstadoInicial();
+    this.tipoUsuarioAtual = "";
+    this.idUsuarioAtual = null;
+    this.idCelulaAtual = null;
+    this.inicializarEventListeners();
   }
 
   inicializarElementos() {
-    // Formulários
-    this.loginForm = document.querySelector("#loginForm");
-    this.cadastroForm = document.querySelector("#cadastroForm");
-    this.redefinirForm = document.querySelector("#redefinirForm");
     this.dashboard = document.querySelector("#dashboard");
-
-    // Campos de Login
-    this.loginUsuario = document.querySelector("#loginUsuario");
-    this.senhaLogin = document.querySelector("#senhalogin");
-    this.btnLogin = document.querySelector("#btnLogin");
-
-    // Navegação
-    this.linkCadastro = document.querySelector("#linkCadastro");
-    this.linkVoltarLogin = document.querySelector("#linkVoltarLogin");
-    this.linkEsqueciSenha = document.querySelector("#linkEsqueciSenha");
+    this.dashboardContent = document.querySelector("#dashboardContent");
+    this.modalContainer = document.querySelector("#modalContainer");
+    this.modalTitle = document.querySelector("#modalTitle");
+    this.modalContent = document.querySelector("#modalContent");
+    this.btnCloseModal = document.querySelector("#btnCloseModal");
     this.btnLogout = document.querySelector("#btnLogout");
-
-    // UI
-    this.btnToggleDarkMode = document.querySelector("#btnToggleDarkMode");
     this.loadingOverlay = document.querySelector("#loadingOverlay");
 
-    if (!this.loginForm || !this.cadastroForm || !this.dashboard) {
-      console.error("Elementos essenciais não encontrados");
+    if (!this.dashboard || !this.dashboardContent) {
+      throw new Error("Elementos essenciais do dashboard não encontrados");
     }
-  }
-
-  configurarToastr() {
-    toastr.options = {
-      closeButton: true,
-      debug: false,
-      newestOnTop: true,
-      progressBar: true,
-      positionClass: "toast-top-right",
-      preventDuplicates: true,
-      onclick: null,
-      showDuration: "300",
-      hideDuration: "1000",
-      timeOut: "5000",
-      extendedTimeOut: "1000",
-      showEasing: "swing",
-      hideEasing: "linear",
-      showMethod: "fadeIn",
-      hideMethod: "fadeOut",
-      tapToDismiss: false,
-    };
-  }
-
-  inicializarEventos() {
-    // Eventos de Navegação
-    this.linkCadastro?.addEventListener("click", (e) => this.irParaCadastro(e));
-    this.linkVoltarLogin?.addEventListener("click", (e) =>
-      this.voltarParaLogin(e)
-    );
-    this.linkEsqueciSenha?.addEventListener("click", (e) =>
-      this.mostrarRecuperacaoSenha(e)
-    );
-
-    // Login/Logout
-    this.btnLogin?.addEventListener("click", () => this.realizarLogin());
-    this.btnLogout?.addEventListener("click", () => this.realizarLogout());
-
-    // Tema
-    this.btnToggleDarkMode?.addEventListener("click", () =>
-      this.alternarTema()
-    );
-
-    // Cadastro
-    document
-      .querySelector("#btnCadastrar")
-      ?.addEventListener("click", (e) => this.realizarCadastro(e));
-
-    // Redefinição de Senha
-    document
-      .querySelector("#btnRedefinirSenha")
-      ?.addEventListener("click", () => this.redefinirSenha());
-
-    // Validações
-    this.inicializarValidacoes();
-
-    // Enter nos formulários
-    this.inicializarEnterForms();
-  }
-
-  async verificarEmail() {
-    const emailInput = document.querySelector("#email");
-    if (!emailInput) return;
-    const email = emailInput.value.trim();
-
-    // Validação do formato de e-mail
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      emailInput.classList.add("input-error");
-      mostrarToast("Por favor, insira um e-mail válido.", "error");
-      return;
-    }
-
-    try {
-      this.mostrarLoading();
-      const response = await fetch(
-        "https://casadopai-v3.onrender.com/usuarios/"
-      );
-      if (!response.ok) throw new Error("Erro na resposta da rede");
-      const usuarios = await response.json();
-      const emailJaEmUso = usuarios.some((usuario) => usuario.email === email);
-      if (emailJaEmUso) {
-        emailInput.classList.add("input-error");
-        mostrarToast("Este e-mail já está em uso.", "error");
-      } else {
-        emailInput.classList.remove("input-error");
-        mostrarToast("E-mail disponível!", "success");
-      }
-    } catch (error) {
-      console.error("Erro ao verificar o e-mail:", error);
-      mostrarToast("Erro ao verificar o e-mail. Tente novamente.", "error");
-    } finally {
-      this.ocultarLoading();
-    }
-  }
-
-  inicializarValidacoes() {
-    // Email
-    const emailInput = document.querySelector("#email");
-    emailInput?.addEventListener("blur", () => this.verificarEmail());
-
-    // Senha
-    const senhaCadastro = document.querySelector("#senhaCadastro");
-    const confirmeSenhaCadastro = document.querySelector(
-      "#confirmeSenhaCadastro"
-    );
-
-    senhaCadastro?.addEventListener("input", () => this.verificarForcaSenha());
-    confirmeSenhaCadastro?.addEventListener("input", () =>
-      this.verificarForcaSenha()
-    );
-
-    // Máscara de telefone
-    const telefoneInput = document.querySelector("#telefone");
-    telefoneInput?.addEventListener("input", (e) => this.mascaraTelefone(e));
-
-    // Campos condicionais
-    this.inicializarCamposCondicionais();
-  }
-
-  inicializarCamposCondicionais() {
-    const participaMinisterio = document.querySelector("#participaMinisterio");
-    const selectMinisterio = document.querySelector("#selectMinisterio");
-    const participaCelula = document.querySelector("#participaCelula");
-    const selectCelula = document.querySelector("#selectCelula");
-
-    participaMinisterio?.addEventListener("change", () => {
-      if (selectMinisterio) {
-        participaMinisterio.checked
-          ? mostrarElemento(selectMinisterio)
-          : ocultarElemento(selectMinisterio);
-      }
-    });
-
-    participaCelula?.addEventListener("change", () => {
-      if (selectCelula) {
-        participaCelula.checked
-          ? mostrarElemento(selectCelula)
-          : ocultarElemento(selectCelula);
-      }
-    });
-  }
-
-  verificarEstadoInicial() {
-    const usuarioLogado = storageManager.getUsuarioLogado();
-    const formularioAtivo = getEstadoFormulario();
-
-    if (usuarioLogado) {
-      this.mostrarDashboard(usuarioLogado);
-    } else if (formularioAtivo === "cadastro") {
-      this.mostrarCadastro();
-    } else {
-      this.mostrarLogin();
-    }
-
-    // Verificar tema
-    this.verificarTema();
-  }
-
-  mostrarDashboard(usuario) {
-    ocultarElemento(this.loginForm);
-    ocultarElemento(this.cadastroForm);
-    mostrarElemento(this.dashboard);
-    carregarDashboard(usuario.tipoUsuario, usuario.idUsuario, usuario.idCelula);
-  }
-
-  mostrarCadastro() {
-    ocultarElemento(this.loginForm);
-    mostrarElemento(this.cadastroForm);
-    ocultarElemento(this.dashboard);
-  }
-
-  mostrarLogin() {
-    mostrarElemento(this.loginForm);
-    ocultarElemento(this.cadastroForm);
-    ocultarElemento(this.dashboard);
-  }
-
-  verificarTema() {
-    const isDarkMode =
-      localStorage.getItem(storageManager.KEYS.TEMA) === "true";
-    document.documentElement.setAttribute(
-      "data-theme",
-      isDarkMode ? "dark" : "light"
-    );
   }
 
   mostrarLoading() {
-    if (this.loadingOverlay) mostrarElemento(this.loadingOverlay);
+    if (this.loadingOverlay) {
+      mostrarElemento(this.loadingOverlay);
+    }
   }
 
   ocultarLoading() {
-    if (this.loadingOverlay) ocultarElemento(this.loadingOverlay);
-  }
-
-  // Métodos de Navegação
-  irParaCadastro(e) {
-    e.preventDefault();
-    salvarEstadoFormulario("cadastro");
-    this.trocarFormulario(this.cadastroForm, this.loginForm);
-  }
-
-  voltarParaLogin(e) {
-    e.preventDefault();
-    salvarEstadoFormulario("login");
-    this.trocarFormulario(this.loginForm, this.cadastroForm);
-  }
-
-  // Sistema de Login/Logout
-  async realizarLogin() {
-    const usuario = this.loginUsuario?.value?.trim();
-    const senha = this.senhaLogin?.value?.trim();
-
-    if (!this.validarCamposLogin(usuario, senha)) return;
-
-    if (usuario === "Administrador" && senha === "Password321@") {
-      this.loginSucesso("Administrador", null, null);
-      return;
+    if (this.loadingOverlay) {
+      ocultarElemento(this.loadingOverlay);
     }
+  }
 
+  async carregarDashboard(tipoUsuario, idUsuario, idCelula) {
     try {
       this.mostrarLoading();
-      const response = await fetch("https://casadopai-v3.onrender.com/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email: usuario, senha }),
+
+      this.tipoUsuarioAtual = tipoUsuario;
+      this.idUsuarioAtual = idUsuario;
+      this.idCelulaAtual = idCelula;
+
+      console.log("Carregando dashboard:", {
+        tipoUsuario,
+        idUsuario,
+        idCelula,
       });
 
-      const data = await response.json();
+      let url = "https://casadopai-v3.onrender.com/usuarios";
+      let mensagemCarregamento = "";
 
-      if (!response.ok) {
-        throw new Error(
-          data.error || data.message || "Erro ao autenticar usuário"
-        );
+      switch (tipoUsuario) {
+        case "LiderCelula":
+          if (!idCelula) {
+            throw new Error("ID da célula não fornecido para líder");
+          }
+          url = `https://casadopai-v3.onrender.com/celulas/${idCelula}/usuarios`;
+          mensagemCarregamento = "Carregando membros da célula...";
+          break;
+        case "UsuarioComum":
+          if (!idUsuario) {
+            throw new Error("ID do usuário não fornecido");
+          }
+          url = `https://casadopai-v3.onrender.com/usuarios/${idUsuario}`;
+          mensagemCarregamento = "Carregando seu perfil...";
+          break;
+        case "Administrador":
+          mensagemCarregamento = "Carregando lista de usuários...";
+          break;
+        default:
+          throw new Error("Tipo de usuário não reconhecido");
       }
 
-      this.loginSucesso(
-        data.usuario.tipoUsuario,
-        data.usuario.id,
-        data.usuario.idCelula
-      );
+      if (this.dashboardContent) {
+        this.dashboardContent.innerHTML =
+          this.gerarLoadingHTML(mensagemCarregamento);
+      }
+
+      const response = await this.fetchComTimeout(url);
+      const dados = await response.json();
+
+      let conteudo = "";
+      switch (tipoUsuario) {
+        case "Administrador":
+          conteudo = this.gerarConteudoAdmin(dados);
+          break;
+        case "LiderCelula":
+          conteudo = this.gerarConteudoLider(dados);
+          this.mostrarMensagemResultado(dados);
+          break;
+        case "UsuarioComum":
+          conteudo = this.gerarConteudoUsuario(dados);
+          break;
+      }
+
+      this.atualizarConteudoDashboard(conteudo);
     } catch (error) {
-      mostrarToast(error.message, "error");
-      this.marcarCamposErro(["loginUsuario", "senhalogin"]);
+      console.error("Erro ao carregar os dados da dashboard:", error);
+      this.tratarErroCarregamento(error);
     } finally {
       this.ocultarLoading();
     }
   }
 
-  validarCamposLogin(usuario, senha) {
-    if (!usuario || !senha) {
-      mostrarToast("Por favor, preencha todos os campos!", "error");
-      if (!usuario) this.loginUsuario?.classList.add("input-error");
-      if (!senha) this.senhaLogin?.classList.add("input-error");
-      return false;
-    }
-    return true;
-  }
-
-  loginSucesso(tipoUsuario, idUsuario, idCelula) {
-    storageManager.salvarUsuarioLogado({
-      tipoUsuario,
-      idUsuario: idUsuario ? parseInt(idUsuario) : null,
-      idCelula: idCelula ? parseInt(idCelula) : null,
-    });
-
-    salvarEstadoFormulario("dashboard");
-    this.mostrarDashboard({ tipoUsuario, idUsuario, idCelula });
-    mostrarToast("Login realizado com sucesso!", "success");
-  }
-
-  realizarLogout() {
-    storageManager.limparUsuarioLogado();
-    salvarEstadoFormulario("login");
-
-    if (this.loginUsuario) this.loginUsuario.value = "";
-    if (this.senhaLogin) this.senhaLogin.value = "";
-
-    this.mostrarLogin();
-  }
-
-  // Sistema de Cadastro
-  async realizarCadastro(e) {
-    e.preventDefault();
-
-    if (!this.validarFormularioCadastro()) return;
-
-    const dadosCadastro = this.coletarDadosCadastro();
+  async fetchComTimeout(url, options = {}, timeout = 10000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
 
     try {
-      this.mostrarLoading();
-      const response = await fetch(
-        "https://casadopai-v3.onrender.com/usuarios",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(dadosCadastro),
-        }
-      );
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
 
-      console.log(
-        "Dados enviados para cadastro:",
-        JSON.stringify(dadosCadastro)
-      );
+      clearTimeout(id);
 
       if (!response.ok) {
-        const responseText = await response.text();
-        console.error(
-          "Erro ao cadastrar usuário. Resposta da API:",
-          responseText
-        );
-        throw new Error(`Erro ao cadastrar usuário: ${responseText}`);
+        const error = await response.json();
+        throw new Error(error.message || "Erro na requisição");
       }
 
-      mostrarToast("Cadastro realizado com sucesso!", "success");
-      this.resetarFormulario(this.cadastroForm);
-      this.voltarParaLogin(new Event("click"));
+      return response;
     } catch (error) {
-      console.error("Erro no cadastro:", error);
-      mostrarToast(
-        "Erro ao realizar cadastro. Por favor, tente novamente.",
-        "error"
-      );
-    } finally {
-      this.ocultarLoading();
+      if (error.name === "AbortError") {
+        throw new Error("Tempo limite de requisição excedido");
+      }
+      throw error;
     }
   }
 
-  validarFormularioCadastro() {
-    const camposObrigatorios = [
-      { id: "nomeCompleto", label: "Nome Completo" },
-      { id: "email", label: "Email" },
-      { id: "telefone", label: "Telefone" },
-      { id: "dataNascimento", label: "Data de Nascimento" },
-      { id: "senhaCadastro", label: "Senha" },
-      { id: "confirmeSenhaCadastro", label: "Confirmar Senha" },
-    ];
-
-    // Limpar erros anteriores
-    this.limparErrosFormulario();
-
-    // Validar campos vazios
-    const camposVazios = this.verificarCamposVazios(camposObrigatorios);
-    if (camposVazios.length > 0) {
-      mostrarToast(
-        `Por favor, preencha os campos: ${camposVazios.join(", ")}`,
-        "error"
-      );
-      return false;
-    }
-
-    // Validar email
-    if (!this.validarEmail()) return false;
-
-    // Validar senha
-    if (!this.validarSenha()) return false;
-
-    return true;
+  gerarLoadingHTML(mensagem) {
+    return `
+            <div class="flex justify-center items-center p-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-3"></div>
+                <span class="text-lg">${mensagem}</span>
+            </div>
+        `;
   }
 
-  limparErrosFormulario() {
-    document.querySelectorAll(".input-error").forEach((input) => {
-      input.classList.remove("input-error");
-    });
+  mostrarMensagemResultado(dados) {
+    if (Array.isArray(dados)) {
+      if (dados.length === 0) {
+        mostrarToast("Sua célula ainda não possui membros cadastrados", "info");
+      } else {
+        mostrarToast(
+          `${dados.length} membro(s) encontrado(s) em sua célula`,
+          "success"
+        );
+      }
+    }
   }
 
-  verificarCamposVazios(campos) {
-    return campos
-      .filter(({ id }) => !document.querySelector(`#${id}`)?.value?.trim())
-      .map(({ label }) => label);
+  atualizarConteudoDashboard(conteudo) {
+    if (this.dashboardContent) {
+      this.dashboardContent.style.opacity = "0";
+      setTimeout(() => {
+        this.dashboardContent.innerHTML = conteudo;
+        this.dashboardContent.style.opacity = "1";
+        this.adicionarEventosDashboard();
+      }, 300);
+    }
   }
 
-  validarEmail() {
-    const email = document.querySelector("#email").value;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailRegex.test(email)) {
-      document.querySelector("#email").classList.add("input-error");
-      mostrarToast("Por favor, insira um email válido", "error");
-      return false;
+  tratarErroCarregamento(error) {
+    const formularioAtivo = getEstadoFormulario();
+    if (formularioAtivo === "loginForm" || formularioAtivo === "cadastroForm") {
+      mostrarToast("Erro ao carregar dados do dashboard", "error");
     }
-    return true;
   }
 
-  validarSenha() {
-    const senha = document.querySelector("#senhaCadastro").value;
-    const confirmeSenha = document.querySelector(
-      "#confirmeSenhaCadastro"
-    ).value;
-
-    if (senha.length < 8) {
-      this.marcarErroSenha("A senha deve ter no mínimo 8 caracteres");
-      return false;
-    }
-
-    if (!/(?=.*[A-Z])/.test(senha)) {
-      this.marcarErroSenha(
-        "A senha deve conter pelo menos uma letra maiúscula"
-      );
-      return false;
-    }
-
-    if (!/(?=.*[0-9])/.test(senha)) {
-      this.marcarErroSenha("A senha deve conter pelo menos um número");
-      return false;
-    }
-
-    if (!/(?=.*[!@#$%^&*])/.test(senha)) {
-      this.marcarErroSenha(
-        "A senha deve conter pelo menos um caractere especial (!@#$%^&*)"
-      );
-      return false;
-    }
-
-    if (senha !== confirmeSenha) {
-      document.querySelector("#senhaCadastro").classList.add("input-error");
-      document
-        .querySelector("#confirmeSenhaCadastro")
-        .classList.add("input-error");
-      mostrarToast("As senhas não coincidem", "error");
-      return false;
-    }
-
-    return true;
-  }
-
-  marcarErroSenha(mensagem) {
-    document.querySelector("#senhaCadastro").classList.add("input-error");
-    mostrarToast(mensagem, "error");
-  }
-
-  coletarDadosCadastro() {
-    const dadosBasicos = {
-      nomecompleto: document.querySelector("#nomeCompleto")?.value?.trim(),
-      email: document.querySelector("#email")?.value?.trim(),
-      telefone: document.querySelector("#telefone")?.value?.trim(),
-      datanascimento: document.querySelector("#dataNascimento")?.value?.trim(),
-      senha: document.querySelector("#senhaCadastro")?.value?.trim(),
+  formatarTipoUsuario(tipo) {
+    const tipos = {
+      LiderCelula: "Líder de Célula",
+      UsuarioComum: "Membro da Igreja",
+      Administrador: "Administrador",
     };
-
-    const checkboxes = {
-      concluiubatismo:
-        document.querySelector("#concluiuBatismo")?.checked || false,
-      participoucafe:
-        document.querySelector("#participouCafe")?.checked || false,
-      participaministerio:
-        document.querySelector("#participaMinisterio")?.checked || false,
-      participacelula:
-        document.querySelector("#participaCelula")?.checked || false,
-    };
-
-    const selects = {
-      nomeministerio:
-        document.querySelector("#selectMinisterio")?.value?.trim() || "",
-      idcelula: document.querySelector("#selectCelula")?.value?.trim() || "",
-      tipousuario: "UsuarioComum",
-    };
-
-    const cursos = [
-      "cursoMeuNovoCaminho",
-      "cursoVidaDevocional",
-      "cursoFamiliaCrista",
-      "cursoVidaProsperidade",
-      "cursoPrincipiosAutoridade",
-      "cursoVidaEspirito",
-      "cursoCaraterCristo",
-      "cursoIdentidadesRestauradas",
-    ].reduce(
-      (acc, curso) => ({
-        ...acc,
-        [curso.toLowerCase()]:
-          document.querySelector(`#${curso}`)?.checked || false,
-      }),
-      {}
-    );
-
-    return {
-      ...dadosBasicos,
-      ...checkboxes,
-      ...selects,
-      ...cursos,
-    };
+    return tipos[tipo] || tipo;
   }
 
-  // Recuperação de Senha
-  async mostrarRecuperacaoSenha(e) {
-    e.preventDefault();
+  gerarConteudoAdmin(dados) {
+    return `
+        <div class="flex flex-col items-center w-full">
+            <h2 class="text-2xl font-bold mb-4 text-center">Painel do Administrador</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+                ${dados
+                  .filter((usuario) => usuario.email !== "admin@casadopai.com")
+                  .map((usuario) => this.gerarCardUsuario(usuario))
+                  .join("")}
+            </div>
+        </div>
+    `;
+  }
 
-    const formulario = `
-            <div id="formRecuperacaoSenha" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
-                <div class="modal modal-open">
-                    <div class="modal-box relative">
-                        <h2 class="font-bold text-lg mb-4">Recuperação de Senha</h2>
-                        <p class="mb-4">Digite seu e-mail cadastrado para receber o link de recuperação de senha.</p>
-                        <div class="form-control">
-                            <input type="email" id="emailRecuperacao" placeholder="Digite seu e-mail" 
-                                class="input input-bordered w-full" required>
-                        </div>
-                        <div class="modal-action">
-                            <button id="botaoRecuperar" class="btn btn-primary">Enviar E-mail</button>
-                            <button id="botaoFechar" class="btn">Cancelar</button>
+  gerarConteudoLider(dados) {
+    if (!Array.isArray(dados) || dados.length === 0) {
+      return `
+                <div class="flex flex-col items-center w-full">
+                    <h2 class="text-2xl font-bold mb-4 text-center">Painel do Líder de Célula</h2>
+                    <p class="text-center">Nenhum membro encontrado para esta célula.</p>
+                </div>
+            `;
+    }
+
+    return `
+            <div class="flex flex-col items-center w-full">
+                <h2 class="text-2xl font-bold mb-4 text-center">Painel do Líder de Célula</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+                    ${dados
+                      .map((usuario) => this.gerarCardUsuario(usuario))
+                      .join("")}
+                </div>
+            </div>
+        `;
+  }
+
+  gerarConteudoUsuario(dados) {
+    const usuario = dados;
+    return `
+            <div class="flex flex-col items-center w-full">
+                <h2 class="text-2xl font-bold mb-4 text-center">Meu Perfil</h2>
+                <div class="card bg-base-100 shadow-xl w-full max-w-2xl">
+                    <div class="card-body">
+                        <h3 class="card-title">${usuario.nomecompleto}</h3>
+                        <p>Email: ${usuario.email}</p>
+                        <p>Telefone: ${usuario.telefone}</p>
+                        <p>Célula: ${usuario.nomecelula || "Não participa"}</p>
+                        <div class="card-actions justify-end mt-2">
+                            <button class="btn btn-primary btn-sm btn-detalhes" data-id="${
+                              usuario.id
+                            }">
+                                Ver Mais Detalhes
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         `;
-
-    document.body.insertAdjacentHTML("beforeend", formulario);
-
-    // Eventos do formulário de recuperação
-    this.inicializarEventosRecuperacao();
   }
 
-  inicializarEventosRecuperacao() {
-    document
-      .querySelector("#botaoRecuperar")
-      ?.addEventListener("click", () => this.enviarEmailRecuperacao());
-
-    document
-      .querySelector("#botaoFechar")
-      ?.addEventListener("click", () => this.fecharModalRecuperacao());
-
-    document
-      .querySelector("#formRecuperacaoSenha")
-      ?.addEventListener("click", (e) => {
-        if (e.target.id === "formRecuperacaoSenha") {
-          this.fecharModalRecuperacao();
-        }
-      });
-
-    document
-      .querySelector("#emailRecuperacao")
-      ?.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          this.enviarEmailRecuperacao();
-        }
-      });
+  gerarCardUsuario(usuario) {
+    return `
+            <div class="card bg-base-100 shadow-xl user-card">
+                <div class="card-body">
+                    <h3 class="card-title">${usuario.nomecompleto}</h3>
+                    <p>Email: ${usuario.email}</p>
+                    <p>Tipo: ${this.formatarTipoUsuario(
+                      usuario.tipousuario
+                    )}</p>
+                    <p>Célula: ${usuario.nomecelula || "Não associado"}</p>
+                    <div class="card-actions justify-end mt-2">
+                        <button class="btn btn-primary btn-sm btn-detalhes" data-id="${
+                          usuario.id
+                        }">
+                            Detalhes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
   }
 
-  async enviarEmailRecuperacao() {
-    const emailInput = document.querySelector("#emailRecuperacao");
-    const email = emailInput?.value?.trim();
+  adicionarEventosDashboard() {
+    const btnDetalhes = document.querySelectorAll(".btn-detalhes");
+    btnDetalhes.forEach((btn) => {
+      btn.addEventListener("click", () =>
+        this.mostrarDetalhesUsuario(btn.dataset.id)
+      );
+    });
+  }
 
-    if (!this.validarEmailRecuperacao(email)) return;
+  async mostrarDetalhesUsuario(id) {
+    if (!id) {
+      mostrarToast("ID do usuário não definido", "error");
+      return;
+    }
 
     try {
       this.mostrarLoading();
-      const response = await fetch(
-        "https://casadopai-v3.onrender.com/recuperar-senha",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email }),
-        }
+      const response = await this.fetchComTimeout(
+        `https://casadopai-v3.onrender.com/usuarios/${id}`
       );
+      const usuario = await response.json();
 
-      const dados = await response.json();
-
-      if (response.ok) {
-        mostrarToast("E-mail de recuperação enviado com sucesso!", "success");
-        setTimeout(() => this.fecharModalRecuperacao(), 1500);
-      } else {
-        throw new Error(dados.error || "Erro ao enviar e-mail de recuperação");
-      }
+      this.preencherDetalhesUsuario(usuario);
+      this.abrirModal();
+      mostrarToast("Detalhes do usuário carregados com sucesso", "success");
     } catch (error) {
-      console.error("Erro ao enviar e-mail:", error);
+      console.error("Erro ao carregar detalhes do usuário:", error);
       mostrarToast(
-        "Erro ao enviar e-mail. Tente novamente mais tarde.",
+        error.message || "Erro ao carregar detalhes do usuário",
         "error"
       );
     } finally {
@@ -678,258 +305,679 @@ class FormManager {
     }
   }
 
-  validarEmailRecuperacao(email) {
-    if (!email) {
-      mostrarToast("Por favor, digite seu e-mail", "error");
-      return false;
+  preencherDetalhesUsuario(usuario) {
+    if (this.modalTitle) {
+      this.modalTitle.textContent = `Detalhes de ${usuario.nomecompleto}`;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      mostrarToast("Por favor, digite um e-mail válido", "error");
-      return false;
-    }
-
-    return true;
-  }
-
-  fecharModalRecuperacao() {
-    const modal = document.querySelector("#formRecuperacaoSenha");
-    if (modal) {
-      modal.classList.add("fade-out");
-      setTimeout(() => modal.remove(), 300);
+    const conteudoModal = document.querySelector(
+      "#conteudoDetalhesUsuario"
+    )?.innerHTML;
+    if (this.modalContent && conteudoModal) {
+      this.modalContent.innerHTML = conteudoModal;
+      this.preencherCamposUsuario(usuario);
+      this.preencherCursosConcluidos(usuario);
+      this.adicionarBotoesAcao(usuario);
     }
   }
 
-  // Redefinição de Senha
-  async redefinirSenha() {
-    const { novaSenha, confirmaSenha } = this.obterSenhasRedefinicao();
+  preencherCamposUsuario(usuario) {
+    const campos = {
+      "#detalhesEmail": usuario.email,
+      "#detalhesTelefone": usuario.telefone,
+      "#detalhesDataNascimento": usuario.datanascimento
+        ? new Date(usuario.datanascimento).toLocaleDateString()
+        : "Não disponível",
+      "#detalhesTipoUsuario": this.formatarTipoUsuario(usuario.tipousuario),
+      "#detalhesConcluiuBatismo": usuario.concluiubatismo ? "Sim" : "Não",
+      "#detalhesParticipouCafe": usuario.participoucafe ? "Sim" : "Não",
+      "#detalhesParticipaMinisterio": usuario.participaministerio
+        ? "Sim"
+        : "Não",
+      "#detalhesMinisterio": usuario.nomeministerio || "Não participa",
+      "#detalhesParticipaCelula": usuario.participacelula ? "Sim" : "Não",
+      "#detalhesCelula": usuario.nomecelula || "Não participa",
+    };
 
-    if (!this.validarSenhasRedefinicao(novaSenha, confirmaSenha)) return;
+    Object.entries(campos).forEach(([selector, value]) => {
+      const elemento = document.querySelector(selector);
+      if (elemento) elemento.textContent = value;
+    });
+  }
+
+  preencherCursosConcluidos(usuario) {
+    const listaCursos = document.querySelector("#listaCursosConcluidos");
+    if (!listaCursos) return;
+
+    listaCursos.innerHTML = "";
+    const cursos = [
+      { id: "cursomeunovocaminho", nome: "Meu Novo Caminho" },
+      { id: "cursovidadevocional", nome: "Vida Devocional" },
+      { id: "cursofamiliacrista", nome: "Família Cristã" },
+      { id: "cursovidaprosperidade", nome: "Vida de Prosperidade" },
+      { id: "cursoprincipiosautoridade", nome: "Princípios de Autoridade" },
+      { id: "cursovidaespirito", nome: "Vida no Espírito" },
+      { id: "cursocaratercristo", nome: "Caráter de Cristo" },
+      { id: "cursoidentidadesrestauradas", nome: "Identidades Restauradas" },
+    ];
+
+    cursos.forEach((curso) => {
+      if (usuario[curso.id]) {
+        listaCursos.innerHTML += `<li class="ml-4">${curso.nome}</li>`;
+      }
+    });
+  }
+
+  adicionarBotoesAcao(usuario) {
+    const acoesUsuario = document.querySelector("#acoesUsuario");
+    if (!acoesUsuario) return;
+
+    if (
+      this.tipoUsuarioAtual === "Administrador" ||
+      (this.tipoUsuarioAtual === "LiderCelula" &&
+        usuario.tipousuario !== "Administrador")
+    ) {
+      let botoesHTML = `
+                <button class="btn btn-primary btn-sm mr-2" onclick="editarUsuario(${usuario.id})">Editar</button>
+                <button class="btn btn-error btn-sm mr-2" onclick="deletarUsuario(${usuario.id})">Deletar</button>
+            `;
+
+      if (this.tipoUsuarioAtual === "Administrador") {
+        if (
+          usuario.tipousuario !== "Administrador" &&
+          usuario.tipousuario !== "LiderCelula"
+        ) {
+          botoesHTML += `
+                        <button class="btn btn-info btn-sm" onclick="tornarLider(${usuario.id})">
+                            Tornar Líder
+                        </button>
+                    `;
+        } else if (usuario.tipousuario === "LiderCelula") {
+          botoesHTML += `
+                        <button class="btn btn-warning btn-sm" onclick="rebaixarLider(${usuario.id})">
+                            Rebaixar para Usuário Comum
+                        </button>
+                    `;
+        }
+      }
+      acoesUsuario.innerHTML = botoesHTML;
+    }
+  }
+
+  async editarUsuario(id) {
+    if (!id) {
+      mostrarToast("ID do usuário não definido", "error");
+      return;
+    }
 
     try {
       this.mostrarLoading();
-      const token = new URLSearchParams(window.location.search).get("token");
-
-      if (!token) {
-        mostrarToast("Token não encontrado", "error");
-        return;
-      }
-
-      const response = await fetch(
-        "https://casadopai-v3.onrender.com/atualizar-senha",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ token, novaSenha }),
-        }
+      const response = await this.fetchComTimeout(
+        `https://casadopai-v3.onrender.com/usuarios/${id}`
       );
+      const usuario = await response.json();
 
-      const data = await response.json();
+      this.modalTitle.textContent = `Editar ${usuario.nomecompleto}`;
+      this.modalContent.innerHTML = this.gerarFormularioEdicao(usuario);
 
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao atualizar senha");
-      }
+      const form = document.querySelector("#formEditarUsuario");
+      form?.addEventListener("submit", (e) => this.salvarEdicaoUsuario(e, id));
 
-      this.senhaRedefinidaComSucesso();
+      this.adicionarEventosValidacao();
+      this.abrirModal();
     } catch (error) {
-      console.error("Erro:", error);
-      mostrarToast(error.message || "Erro ao atualizar senha", "error");
+      console.error("Erro ao carregar dados para edição:", error);
+      mostrarToast(
+        error.message || "Erro ao carregar dados para edição",
+        "error"
+      );
     } finally {
       this.ocultarLoading();
     }
   }
 
-  obterSenhasRedefinicao() {
-    return {
-      novaSenha: document.querySelector("#novaSenha")?.value,
-      confirmaSenha: document.querySelector("#confirmaSenhaNova")?.value,
-    };
+  gerarFormularioEdicao(usuario) {
+    return `
+            <form id="formEditarUsuario" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Nome Completo</span>
+                        </label>
+                        <input type="text" id="editNomeCompleto" class="input input-bordered" 
+                            value="${usuario.nomecompleto}" required
+                            onchange="this.classList.remove('input-error')">
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Email</span>
+                        </label>
+                        <input type="email" id="editEmail" class="input input-bordered" 
+                            value="${usuario.email}" required
+                            onchange="this.classList.remove('input-error')">
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Telefone</span>
+                        </label>
+                        <input type="tel" id="editTelefone" class="input input-bordered" 
+                            value="${usuario.telefone}" required
+                            onchange="this.classList.remove('input-error')">
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Data de Nascimento</span>
+                        </label>
+                        <input type="date" id="editDataNascimento" class="input input-bordered" 
+                            value="${
+                              usuario.datanascimento
+                                ? new Date(usuario.datanascimento)
+                                    .toISOString()
+                                    .split("T")[0]
+                                : ""
+                            }" required
+                            onchange="this.classList.remove('input-error')">
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Ministério</span>
+                        </label>
+                        <select id="editMinisterio" class="select select-bordered">
+                            <option value="" ${
+                              usuario.nomeministerio ? "" : "selected"
+                            }>Não participa</option>
+                            <option value="Acolhimento" ${
+                              usuario.nomeministerio === "Acolhimento"
+                                ? "selected"
+                                : ""
+                            }>Acolhimento</option>
+                            <option value="Mídias" ${
+                              usuario.nomeministerio === "Mídias"
+                                ? "selected"
+                                : ""
+                            }>Mídias</option>
+                            <option value="Louvor" ${
+                              usuario.nomeministerio === "Louvor"
+                                ? "selected"
+                                : ""
+                            }>Louvor</option>
+                            <option value="Dança" ${
+                              usuario.nomeministerio === "Dança"
+                                ? "selected"
+                                : ""
+                            }>Dança</option>
+                            <option value="Infantil" ${
+                              usuario.nomeministerio === "Infantil"
+                                ? "selected"
+                                : ""
+                            }>Infantil</option>
+                            <option value="Teens" ${
+                              usuario.nomeministerio === "Teens"
+                                ? "selected"
+                                : ""
+                            }>Teens</option>
+                        </select>
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Célula</span>
+                        </label>
+                        <select id="editCelula" class="select select-bordered">
+                            <option value="" ${
+                              usuario.idcelula ? "" : "selected"
+                            }>Não participa</option>
+                            ${this.gerarOpcoesCelulas(usuario.idcelula)}
+                        </select>
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label cursor-pointer">
+                            <span class="label-text">Concluiu Batismo</span> 
+                            <input type="checkbox" id="editConcluiuBatismo" class="checkbox" ${
+                              usuario.concluiubatismo ? "checked" : ""
+                            }>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-control mt-6">
+                    <button type="submit" class="btn btn-primary w-full">Salvar Alterações</button>
+                </div>
+            </form>
+        `;
   }
 
-  validarSenhasRedefinicao(novaSenha, confirmaSenha) {
-    if (!novaSenha || !confirmaSenha) {
-      mostrarToast("Por favor, preencha todos os campos", "error");
-      return false;
-    }
+  gerarOpcoesCelulas(idCelulaSelecionada) {
+    return `
+            <option value="1" ${
+              idCelulaSelecionada === 1 ? "selected" : ""
+            }>Aba Pai</option>
+            <option value="2" ${
+              idCelulaSelecionada === 2 ? "selected" : ""
+            }>Dunamis</option>
+            <option value="3" ${
+              idCelulaSelecionada === 3 ? "selected" : ""
+            }>Exousia</option>
+            <option value="4" ${
+              idCelulaSelecionada === 4 ? "selected" : ""
+            }>Koinonia</option>
+            <option value="5" ${
+              idCelulaSelecionada === 5 ? "selected" : ""
+            }>Luz do Mundo</option>
+            <option value="6" ${
+              idCelulaSelecionada === 6 ? "selected" : ""
+            }>Zoe</option>
+            <option value="7" ${
+              idCelulaSelecionada === 7 ? "selected" : ""
+            }>A Rede</option>
+            <option value="8" ${
+              idCelulaSelecionada === 8 ? "selected" : ""
+            }>Atos 2</option>
+            <option value="9" ${
+              idCelulaSelecionada === 9 ? "selected" : ""
+            }>El Shamah</option>
+            <option value="10" ${
+              idCelulaSelecionada === 10 ? "selected" : ""
+            }>Freedom</option>
+            <option value="11" ${
+              idCelulaSelecionada === 11 ? "selected" : ""
+            }>Hermon</option>
+            <option value="12" ${
+              idCelulaSelecionada === 12 ? "selected" : ""
+            }>Maranata</option>
+            <option value="13" ${
+              idCelulaSelecionada === 13 ? "selected" : ""
+            }>Reobote</option>
+            <option value="14" ${
+              idCelulaSelecionada === 14 ? "selected" : ""
+            }>Sal da Terra</option>
+        `;
+  }
 
-    if (novaSenha !== confirmaSenha) {
-      mostrarToast("As senhas não coincidem", "error");
-      return false;
-    }
+  async salvarEdicaoUsuario(e, id) {
+    e.preventDefault();
 
-    if (novaSenha.length < 8) {
-      mostrarToast("A senha deve ter no mínimo 8 caracteres", "error");
+    const campos = {
+      nomeCompleto: document.querySelector("#editNomeCompleto") || {
+        value: "",
+      },
+      email: document.querySelector("#editEmail") || { value: "" },
+      telefone: document.querySelector("#editTelefone") || { value: "" },
+      dataNascimento: document.querySelector("#editDataNascimento") || {
+        value: "",
+      },
+      ministerio: document.querySelector("#editMinisterio") || { value: "" },
+      celula: document.querySelector("#editCelula") || { value: "" },
+      concluiuBatismo: document.querySelector("#editConcluiuBatismo") || {
+        checked: false,
+      },
+    };
+
+    if (!this.validarCamposEdicao(campos)) return;
+
+    try {
+      this.mostrarLoading();
+      const dadosAtualizados = {
+        nomeCompleto: campos.nomeCompleto.value, // Correto
+        email: campos.email.value,
+        telefone: campos.telefone.value,
+        dataNascimento: campos.dataNascimento.value, // Correto
+        nomeMinisterio: campos.ministerio.value,
+        idCelula: campos.celula.value,
+        concluiuBatismo: campos.concluiuBatismo.checked, // Correto
+      };
+
+      const response = await this.fetchComTimeout(
+        `https://casadopai-v3.onrender.com/usuarios/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(dadosAtualizados),
+        }
+      );
+
+      await this.atualizarInterfaceAposAcao("Usuário atualizado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao atualizar usuário:", error);
+      mostrarToast(error.message || "Erro ao atualizar usuário", "error");
+    } finally {
+      this.ocultarLoading();
+    }
+  }
+
+  validarCamposEdicao(campos) {
+    let temErro = false;
+    Object.entries(campos).forEach(([nome, campo]) => {
+      if (!campo.value.trim()) {
+        campo.classList.add("input-error");
+        mostrarToast(`O campo ${nome} é obrigatório`, "error");
+        temErro = true;
+      }
+    });
+
+    if (temErro) return false;
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(campos.email.value)) {
+      campos.email.classList.add("input-error");
+      mostrarToast("Por favor, insira um email válido", "error");
       return false;
     }
 
     return true;
   }
 
-  senhaRedefinidaComSucesso() {
-    mostrarToast("Senha atualizada com sucesso!", "success");
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 2000);
-  }
-
-  // Manipulação de Formulários
-  trocarFormulario(mostrar, ocultar) {
-    if (!mostrar || !ocultar) return;
-
-    ocultar.classList.add("fade-out");
-
-    setTimeout(() => {
-      ocultarElemento(ocultar);
-      ocultar.classList.remove("fade-out");
-      mostrarElemento(mostrar);
-      mostrar.classList.add("fade-in");
-
-      setTimeout(() => {
-        mostrar.classList.remove("fade-in");
-      }, 500);
-    }, 500);
-
-    this.resetarFormulario(ocultar);
-  }
-
-  resetarFormulario(form) {
-    if (!form) return;
-
-    if (form instanceof HTMLFormElement) {
-      form.reset();
-    }
-
-    form.querySelectorAll("input, textarea, select").forEach((input) => {
-      if (input.type === "checkbox" || input.type === "radio") {
-        input.checked = false;
-      } else {
-        input.value = "";
-      }
-      input.classList.remove("input-error");
-    });
-  }
-
-  // Validações
-  verificarForcaSenha() {
-    const senha = document.querySelector("#senhaCadastro")?.value;
-    const confirmeSenha = document.querySelector(
-      "#confirmeSenhaCadastro"
-    )?.value;
-    const forcaSenha = document.querySelector("#forcaSenha");
-    const forcaSenhaTexto = document.querySelector("#forcaSenhaTexto");
-
-    if (!senha || !forcaSenha || !forcaSenhaTexto) return;
-
-    const forca = this.calcularForcaSenha(senha);
-    this.atualizarIndicadorForcaSenha(
-      forca,
-      forcaSenha,
-      forcaSenhaTexto,
-      senha,
-      confirmeSenha
-    );
-  }
-
-  calcularForcaSenha(senha) {
-    let forca = 0;
-    if (senha.length >= 8) forca += 20;
-    if (senha.match(/[a-z]+/)) forca += 20;
-    if (senha.match(/[A-Z]+/)) forca += 20;
-    if (senha.match(/[0-9]+/)) forca += 20;
-    if (senha.match(/[$@#&!]+/)) forca += 20;
-    return forca;
-  }
-
-  atualizarIndicadorForcaSenha(forca, elemento, texto, senha, confirmeSenha) {
-    elemento.value = forca;
-
-    if (confirmeSenha && senha !== confirmeSenha) {
-      texto.textContent = "As senhas não coincidem";
-      this.atualizarClassesForcaSenha(elemento, "error");
+  async deletarUsuario(id) {
+    if (!id) {
+      mostrarToast("ID do usuário não definido", "error");
       return;
     }
 
-    const forcas = {
-      100: { texto: "Muito Forte", classe: "success" },
-      80: { texto: "Forte", classe: "success" },
-      60: { texto: "Média", classe: "warning" },
-      40: { texto: "Fraca", classe: "error" },
-      0: { texto: "Muito Fraca", classe: "error" },
-    };
+    if (!confirm("Tem certeza que deseja deletar este usuário?")) return;
 
-    // Verifica os níveis em ordem decrescente
-    for (const [limite, config] of Object.entries(forcas).sort(
-      (a, b) => b[0] - a[0]
-    )) {
-      if (forca >= Number(limite)) {
-        texto.textContent = `Força da senha: ${config.texto}`;
-        this.atualizarClassesForcaSenha(elemento, config.classe);
-        break;
-      }
+    try {
+      this.mostrarLoading();
+      await this.fetchComTimeout(
+        `https://casadopai-v3.onrender.com/usuarios/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      await this.atualizarInterfaceAposAcao("Usuário deletado com sucesso");
+    } catch (error) {
+      console.error("Erro ao deletar usuário:", error);
+      mostrarToast(error.message || "Erro ao deletar usuário", "error");
+    } finally {
+      this.ocultarLoading();
     }
   }
 
-  atualizarClassesForcaSenha(elemento, tipo) {
-    elemento.classList.remove(
-      "progress-success",
-      "progress-warning",
-      "progress-error"
-    );
-    elemento.classList.add(`progress-${tipo}`);
-  }
+  async tornarLider(id) {
+    if (!id) {
+      mostrarToast("ID do usuário não definido", "error");
+      return;
+    }
 
-  // Utilitários
-  alternarTema() {
-    const html = document.documentElement;
-    const isDark = html.getAttribute("data-theme") === "dark";
-    const novoTema = isDark ? "light" : "dark";
+    if (
+      !confirm("Tem certeza que deseja tornar este usuário um líder de célula?")
+    ) {
+      return;
+    }
 
-    html.setAttribute("data-theme", novoTema);
-    localStorage.setItem(storageManager.KEYS.TEMA, (!isDark).toString());
-  }
+    const tornarLiderBtn = document.querySelector(`#btnTornarLider${id}`);
+    this.gerenciarBotaoAcao(tornarLiderBtn, false);
 
-  mascaraTelefone(event) {
-    let valor = event.target.value.replace(/\D/g, "");
-    valor = valor.replace(/^(\d{2})(\d)/g, "($1) $2");
-    valor = valor.replace(/(\d)(\d{4})$/, "$1-$2");
-    event.target.value = valor;
-  }
+    try {
+      this.mostrarLoading();
 
-  inicializarEnterForms() {
-    this.adicionarEventoEnter("#loginForm", "#btnLogin");
-    this.adicionarEventoEnter("#cadastroForm", "#btnCadastrar");
-  }
+      const verificacaoResponse = await this.fetchComTimeout(
+        `https://casadopai-v3.onrender.com/usuarios/${id}`
+      );
+      const usuario = await verificacaoResponse.json();
 
-  adicionarEventoEnter(formId, buttonId) {
-    const form = document.querySelector(formId);
-    const button = document.querySelector(buttonId);
-
-    if (!form || !button) return;
-
-    form.addEventListener("keydown", (event) => {
-      if (event.target.tagName === "TEXTAREA" || event.key !== "Enter") return;
-
-      event.preventDefault();
-
-      if (formId === "#loginForm") {
-        this.realizarLogin();
-      } else if (formId === "#cadastroForm") {
-        this.realizarCadastro(event);
+      if (!usuario.idcelula) {
+        mostrarToast(
+          "O usuário precisa estar associado a uma célula para se tornar líder",
+          "error"
+        );
+        return;
       }
+
+      if (usuario.tipousuario === "LiderCelula") {
+        mostrarToast("Este usuário já é líder de célula", "warning");
+        return;
+      }
+
+      const response = await this.fetchComTimeout(
+        `https://casadopai-v3.onrender.com/usuarios/${id}/tornar-lider`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      await this.atualizarInterfaceAposAcao(
+        "Usuário promovido a líder de célula com sucesso"
+      );
+    } catch (error) {
+      console.error("Erro ao promover usuário:", error);
+      mostrarToast(
+        error.message || "Erro ao promover usuário a líder",
+        "error"
+      );
+    } finally {
+      this.gerenciarBotaoAcao(tornarLiderBtn, true);
+      this.ocultarLoading();
+    }
+  }
+
+  async rebaixarLider(id) {
+    if (!id) {
+      mostrarToast("ID do usuário não definido", "error");
+      return;
+    }
+
+    if (
+      !confirm(
+        "Tem certeza que deseja rebaixar este líder para usuário comum? Esta ação afetará todos os membros da célula."
+      )
+    ) {
+      return;
+    }
+
+    const rebaixarBtn = document.querySelector(`#btnRebaixarLider${id}`);
+    this.gerenciarBotaoAcao(rebaixarBtn, false);
+
+    try {
+      this.mostrarLoading();
+      const verificacaoResponse = await this.fetchComTimeout(
+        `https://casadopai-v3.onrender.com/usuarios/${id}`
+      );
+      const usuario = await verificacaoResponse.json();
+
+      if (usuario.tipousuario !== "LiderCelula") {
+        mostrarToast("Este usuário não é um líder de célula", "warning");
+        return;
+      }
+
+      const response = await this.fetchComTimeout(
+        `https://casadopai-v3.onrender.com/usuarios/${id}/rebaixar-lider`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      mostrarToast("Líder rebaixado para usuário comum com sucesso", "success");
+      setTimeout(() => {
+        this.fecharModal();
+        this.carregarDashboard(
+          this.tipoUsuarioAtual,
+          this.idUsuarioAtual,
+          this.idCelulaAtual
+        );
+      }, 1500);
+    } catch (error) {
+      console.error("Erro ao rebaixar líder:", error);
+      mostrarToast(error.message || "Erro ao rebaixar líder", "error");
+    } finally {
+      this.gerenciarBotaoAcao(rebaixarBtn, true);
+      this.ocultarLoading();
+    }
+  }
+
+  gerenciarBotaoAcao(botao, habilitado = true) {
+    if (!botao) return;
+
+    botao.disabled = !habilitado;
+    if (habilitado) {
+      botao.classList.remove("opacity-50", "cursor-not-allowed");
+    } else {
+      botao.classList.add("opacity-50", "cursor-not-allowed");
+    }
+  }
+
+  async atualizarInterfaceAposAcao(mensagem, tipo = "success", delay = 1500) {
+    mostrarToast(mensagem, tipo);
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    this.fecharModal();
+    await this.carregarDashboard(
+      this.tipoUsuarioAtual,
+      this.idUsuarioAtual,
+      this.idCelulaAtual
+    );
+  }
+
+  inicializarEventListeners() {
+    // Evento para fechar modal pelo botão
+    document.querySelector("#btnCloseModal")?.addEventListener("click", () => {
+      this.fecharModal();
+    });
+
+    // Evento para fechar modal clicando fora
+    document
+      .querySelector("#modalContainer")
+      ?.addEventListener("click", (event) => {
+        if (event.target.id === "modalContainer") {
+          this.fecharModal();
+        }
+      });
+
+    // Evento de logout
+    document.querySelector("#btnLogout")?.addEventListener("click", () => {
+      this.realizarLogout();
     });
   }
 
-  marcarCamposErro(campos) {
-    campos.forEach((campo) => {
-      document.querySelector(`#${campo}`)?.classList.add("input-error");
+  adicionarEventosValidacao() {
+    // Remover classes de erro ao digitar
+    document.querySelectorAll("input").forEach((input) => {
+      input.addEventListener("input", () => {
+        input.classList.remove("input-error");
+      });
     });
+
+    // Mascarar telefone
+    const telefoneInput = document.querySelector("#editTelefone");
+    if (telefoneInput) {
+      telefoneInput.addEventListener("input", (event) => {
+        let valor = event.target.value.replace(/\D/g, "");
+        valor = valor.replace(/^(\d{2})(\d)/g, "($1) $2");
+        valor = valor.replace(/(\d)(\d{4})$/, "$1-$2");
+        event.target.value = valor;
+      });
+    }
+
+    // Validar email em tempo real
+    const emailInput = document.querySelector("#editEmail");
+    if (emailInput) {
+      emailInput.addEventListener("blur", () => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(emailInput.value)) {
+          emailInput.classList.add("input-error");
+          mostrarToast("Por favor, insira um email válido", "error");
+        } else {
+          emailInput.classList.remove("input-error");
+        }
+      });
+    }
+  }
+
+  fecharModal() {
+    if (this.modalContainer) {
+      this.modalContainer.classList.remove("modal-open");
+      if (this.modalTitle) this.modalTitle.textContent = "";
+      if (this.modalContent) this.modalContent.innerHTML = "";
+    }
+  }
+
+  abrirModal() {
+    if (this.modalContainer) {
+      this.modalContainer.classList.add("modal-open");
+    }
+  }
+
+  async editarUsuario(id) {
+    if (!id) {
+      mostrarToast("ID do usuário não definido", "error");
+      return;
+    }
+
+    try {
+      this.mostrarLoading();
+      const response = await this.fetchComTimeout(
+        `https://casadopai-v3.onrender.com/usuarios/${id}`
+      );
+      const usuario = await response.json();
+
+      if (this.modalTitle) {
+        this.modalTitle.textContent = `Editar ${usuario.nomecompleto}`;
+      }
+
+      if (this.modalContent) {
+        this.modalContent.innerHTML = this.gerarFormularioEdicao(usuario);
+
+        // Adicionar evento de submit ao formulário
+        const form = document.querySelector("#formEditarUsuario");
+        if (form) {
+          form.addEventListener("submit", (e) =>
+            this.salvarEdicaoUsuario(e, id)
+          );
+        }
+
+        this.adicionarEventosValidacao();
+        this.abrirModal();
+      }
+    } catch (error) {
+      console.error("Erro ao carregar dados para edição:", error);
+      mostrarToast(
+        error.message || "Erro ao carregar dados para edição",
+        "error"
+      );
+    } finally {
+      this.ocultarLoading();
+    }
+  }
+
+  realizarLogout() {
+    const dashboard = document.querySelector("#dashboard");
+    const loginForm = document.querySelector("#loginForm");
+
+    if (dashboard && loginForm) {
+      ocultarElemento(dashboard);
+      mostrarElemento(loginForm);
+
+      const loginUsuario = document.querySelector("#loginUsuario");
+      const senhaLogin = document.querySelector("#senhalogin");
+
+      if (loginUsuario) loginUsuario.value = "";
+      if (senhaLogin) senhaLogin.value = "";
+    }
   }
 }
 
-// Inicialização
-document.addEventListener("DOMContentLoaded", () => {
-  new FormManager();
-});
+// Exportações e inicialização da classe
+const dashboardManager = new DashboardManager();
+
+// Exportar funções para uso global
+export const carregarDashboard = (tipoUsuario, idUsuario, idCelula) =>
+  dashboardManager.carregarDashboard(tipoUsuario, idUsuario, idCelula);
+
+// Expor métodos para uso global
+window.editarUsuario = (id) => dashboardManager.editarUsuario(id);
+window.deletarUsuario = (id) => dashboardManager.deletarUsuario(id);
+window.tornarLider = (id) => dashboardManager.tornarLider(id);
+window.rebaixarLider = (id) => dashboardManager.rebaixarLider(id);
+window.fecharModal = () => dashboardManager.fecharModal();

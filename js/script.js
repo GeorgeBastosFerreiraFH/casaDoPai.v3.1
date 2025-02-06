@@ -553,8 +553,8 @@ class FormManager {
 
     const selects = {
       nomeministerio:
-        document.querySelector("#selectMinisterio")?.value?.trim() || "",
-      idcelula: document.querySelector("#selectCelula")?.value?.trim() || "",
+        document.querySelector("#selectMinisterio")?.value?.trim() || null,
+      idcelula: document.querySelector("#selectCelula")?.value?.trim() || null,
       tipousuario: "UsuarioComum",
     };
 

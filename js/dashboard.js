@@ -56,7 +56,7 @@ class DashboardManager {
         idCelula,
       });
 
-      let url = "http://localhost:3000/usuarios";
+      let url = "https://casadopai-v3.onrender.com/usuarios";
       let mensagemCarregamento = "";
 
       switch (tipoUsuario) {
@@ -64,14 +64,14 @@ class DashboardManager {
           if (!idCelula) {
             throw new Error("ID da célula não fornecido para líder");
           }
-          url = `http://localhost:3000/celulas/${idCelula}/usuarios`;
+          url = `https://casadopai-v3.onrender.com/celulas/${idCelula}/usuarios`;
           mensagemCarregamento = "Carregando membros da célula...";
           break;
         case "UsuarioComum":
           if (!idUsuario) {
             throw new Error("ID do usuário não fornecido");
           }
-          url = `http://localhost:3000/usuarios/${idUsuario}`;
+          url = `https://casadopai-v3.onrender.com/usuarios/${idUsuario}`;
           mensagemCarregamento = "Carregando seu perfil...";
           break;
         case "Administrador":

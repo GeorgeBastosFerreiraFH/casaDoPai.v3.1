@@ -254,7 +254,7 @@ class DashboardManager {
                     <h3 class="card-title">${usuario.nomecompleto}</h3>
                     <p>Email: ${usuario.email}</p>
                     <p>Tipo: ${this.formatarTipoUsuario(
-                      usuario.tipoUsuario
+                      usuario.tipousuario
                     )}</p>
                     <p>Célula: ${usuario.nomecelula || "Não associado"}</p>
                     <div class="card-actions justify-end mt-2">
@@ -328,7 +328,7 @@ class DashboardManager {
       "#detalhesDataNascimento": usuario.dataNascimento
         ? new Date(usuario.dataNascimento).toLocaleDateString()
         : "Não disponível",
-      "#detalhesTipoUsuario": this.formatarTipoUsuario(usuario.tipoUsuario),
+      "#detalhesTipoUsuario": this.formatarTipoUsuario(usuario.tipousuario),
       "#detalhesConcluiuBatismo": usuario.concluiubatismo ? "Sim" : "Não",
       "#detalhesParticipouCafe": usuario.participoucafe ? "Sim" : "Não",
       "#detalhesParticipaMinisterio": usuario.participaministerio

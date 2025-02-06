@@ -470,9 +470,11 @@ class DashboardManager {
                         </label>
                         <input type="date" id="editDataNascimento" class="input input-bordered" 
                             value="${
-                              new Date(usuario.datanascimento)
-                                .toISOString()
-                                .split("T")[0]
+                              usuario.datanascimento
+                                ? new Date(usuario.datanascimento)
+                                    .toISOString()
+                                    .split("T")[0]
+                                : ""
                             }" required
                             onchange="this.classList.remove('input-error')">
                     </div>
@@ -598,13 +600,19 @@ class DashboardManager {
     e.preventDefault();
 
     const campos = {
-      nomeCompleto: document.querySelector("#editNomeCompleto"),
-      email: document.querySelector("#editEmail"),
-      telefone: document.querySelector("#editTelefone"),
-      dataNascimento: document.querySelector("#editDataNascimento"),
-      ministerio: document.querySelector("#editMinisterio"),
-      celula: document.querySelector("#editCelula"),
-      concluiuBatismo: document.querySelector("#editConcluiuBatismo"),
+      nomeCompleto: document.querySelector("#editNomeCompleto") || {
+        value: "",
+      },
+      email: document.querySelector("#editEmail") || { value: "" },
+      telefone: document.querySelector("#editTelefone") || { value: "" },
+      dataNascimento: document.querySelector("#editDataNascimento") || {
+        value: "",
+      },
+      ministerio: document.querySelector("#editMinisterio") || { value: "" },
+      celula: document.querySelector("#editCelula") || { value: "" },
+      concluiuBatismo: document.querySelector("#editConcluiuBatismo") || {
+        checked: false,
+      },
     };
 
     if (!this.validarCamposEdicao(campos)) return;
@@ -612,13 +620,13 @@ class DashboardManager {
     try {
       this.mostrarLoading();
       const dadosAtualizados = {
-        nomeCompleto: campos.nomecompleto.value,
+        nomeCompleto: campos.nomeCompleto.value, // Correto
         email: campos.email.value,
         telefone: campos.telefone.value,
-        dataNascimento: campos.datanascimento.value,
+        dataNascimento: campos.dataNascimento.value, // Correto
         nomeMinisterio: campos.ministerio.value,
         idCelula: campos.celula.value,
-        concluiuBatismo: campos.concluiubatismo.checked,
+        concluiuBatismo: campos.concluiuBatismo.checked, // Correto
       };
 
       const response = await this.fetchComTimeout(

@@ -400,8 +400,18 @@ class FormManager {
         }
       );
 
+      console.log(
+        "Dados enviados para cadastro:",
+        JSON.stringify(dadosCadastro)
+      );
+
       if (!response.ok) {
-        throw new Error("Erro ao cadastrar usuário");
+        const responseText = await response.text();
+        console.error(
+          "Erro ao cadastrar usuário. Resposta da API:",
+          responseText
+        );
+        throw new Error(`Erro ao cadastrar usuário: ${responseText}`);
       }
 
       mostrarToast("Cadastro realizado com sucesso!", "success");
@@ -523,29 +533,29 @@ class FormManager {
 
   coletarDadosCadastro() {
     const dadosBasicos = {
-      nomeCompleto: document.querySelector("#nomeCompleto")?.value?.trim(),
+      nomecompleto: document.querySelector("#nomeCompleto")?.value?.trim(),
       email: document.querySelector("#email")?.value?.trim(),
       telefone: document.querySelector("#telefone")?.value?.trim(),
-      dataNascimento: document.querySelector("#dataNascimento")?.value?.trim(),
+      datanascimento: document.querySelector("#dataNascimento")?.value?.trim(),
       senha: document.querySelector("#senhaCadastro")?.value?.trim(),
     };
 
     const checkboxes = {
-      concluiuBatismo:
+      concluiubatismo:
         document.querySelector("#concluiuBatismo")?.checked || false,
-      participouCafe:
+      participoucafe:
         document.querySelector("#participouCafe")?.checked || false,
-      participaMinisterio:
+      participaministerio:
         document.querySelector("#participaMinisterio")?.checked || false,
-      participaCelula:
+      participacelula:
         document.querySelector("#participaCelula")?.checked || false,
     };
 
     const selects = {
-      nomeMinisterio:
+      nomeministerio:
         document.querySelector("#selectMinisterio")?.value?.trim() || "",
-      idCelula: document.querySelector("#selectCelula")?.value?.trim() || "",
-      tipoUsuario: "UsuarioComum",
+      idcelula: document.querySelector("#selectCelula")?.value?.trim() || "",
+      tipousuario: "UsuarioComum",
     };
 
     const cursos = [
@@ -560,7 +570,8 @@ class FormManager {
     ].reduce(
       (acc, curso) => ({
         ...acc,
-        [curso]: document.querySelector(`#${curso}`)?.checked || false,
+        [curso.toLowerCase()]:
+          document.querySelector(`#${curso}`)?.checked || false,
       }),
       {}
     );

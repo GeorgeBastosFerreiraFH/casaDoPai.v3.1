@@ -311,11 +311,6 @@ class FormManager {
 
     if (!this.validarCamposLogin(usuario, senha)) return;
 
-    if (usuario === "Administrador" && senha === "Password321@") {
-      this.loginSucesso("Administrador", null, null);
-      return;
-    }
-
     try {
       this.mostrarLoading();
       const response = await fetch("https://casadopai-v3.onrender.com/login", {
@@ -335,9 +330,9 @@ class FormManager {
       }
 
       this.loginSucesso(
-        data.usuario.tipoUsuario,
+        data.usuario.tipousuario,
         data.usuario.id,
-        data.usuario.idCelula
+        data.usuario.idcelula
       );
     } catch (error) {
       mostrarToast(error.message, "error");

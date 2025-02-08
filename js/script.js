@@ -70,6 +70,7 @@ class FormManager {
     this.inicializarEventos();
     this.configurarToastr();
     this.verificarEstadoInicial();
+    this.inicializarTema();
   }
 
   inicializarElementos() {
@@ -91,7 +92,6 @@ class FormManager {
     this.btnLogout = document.querySelector("#btnLogout");
 
     // UI
-    this.btnToggleDarkMode = document.querySelector("#btnToggleDarkMode");
     this.loadingOverlay = document.querySelector("#loadingOverlay");
 
     if (!this.loginForm || !this.cadastroForm || !this.dashboard) {
@@ -135,7 +135,13 @@ class FormManager {
     this.btnLogout?.addEventListener("click", () => this.realizarLogout());
 
     // Tema
-    this.btnToggleDarkMode?.addEventListener("click", () =>
+    this.btnToggleDarkModeGlobal?.addEventListener("click", () =>
+      this.alternarTema()
+    );
+    this.btnToggleDarkModeCadastro?.addEventListener("click", () =>
+      this.alternarTema()
+    );
+    this.btnToggleDarkModeDashboard?.addEventListener("click", () =>
       this.alternarTema()
     );
 
@@ -154,6 +160,28 @@ class FormManager {
 
     // Enter nos formulários
     this.inicializarEnterForms();
+  }
+
+  inicializarTema() {
+    const themeButtons = document.querySelectorAll(".theme-controller");
+    const htmlElement = document.documentElement;
+
+    const updateTheme = (isDark) => {
+      htmlElement.setAttribute("data-theme", isDark ? "dark" : "light");
+      themeButtons.forEach((btn) => (btn.checked = isDark));
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+    };
+
+    themeButtons.forEach((btn) => {
+      btn.addEventListener("change", function () {
+        updateTheme(this.checked);
+      });
+    });
+
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme) {
+      updateTheme(savedTheme === "dark");
+    }
   }
 
   async verificarEmail() {
@@ -877,14 +905,6 @@ class FormManager {
   }
 
   // Utilitários
-  alternarTema() {
-    const html = document.documentElement;
-    const isDark = html.getAttribute("data-theme") === "dark";
-    const novoTema = isDark ? "light" : "dark";
-
-    html.setAttribute("data-theme", novoTema);
-    localStorage.setItem(storageManager.KEYS.TEMA, (!isDark).toString());
-  }
 
   mascaraTelefone(event) {
     let valor = event.target.value.replace(/\D/g, "");

@@ -227,25 +227,158 @@ class DashboardManager {
   gerarConteudoUsuario(dados) {
     const usuario = dados;
     return `
-            <div class="flex flex-col items-center w-full">
-                <h2 class="text-2xl font-bold mb-4 text-center">Meu Perfil</h2>
-                <div class="card bg-base-100 shadow-xl w-full max-w-2xl">
-                    <div class="card-body">
-                        <h3 class="card-title">${usuario.nomecompleto}</h3>
-                        <p>Email: ${usuario.email}</p>
-                        <p>Telefone: ${usuario.telefone}</p>
-                        <p>Célula: ${usuario.nomecelula || "Não participa"}</p>
-                        <div class="card-actions justify-end mt-2">
-                            <button class="btn btn-primary btn-sm btn-detalhes" data-id="${
-                              usuario.id
-                            }">
-                                Ver Mais Detalhes
-                            </button>
+        <div class=" flex flex-col items-center w-full">
+            <h2 class="text-2xl font-bold mb-4 text-center">Meu Perfil</h2>
+            <div class="card bg-base-100 w-full max-w-2xl">
+                <div class="card-body">
+                <div class="flex items-center border-b border-base-300 pb-2">
+                    <h3 class="card-title pb-6">${usuario.nomecompleto}</h3>
+                    </div>
+                    <!-- Informações Básicas -->
+                    <div class="grid gap-4">
+                        <div class="flex items-center border-b border-base-300 pb-2">
+                            <span class="font-medium">Email:</span>
+                            <span class="ml-2">${usuario.email}</span>
+                        </div>
+                        
+                        <div class="flex items-center border-b border-base-300 pb-2">
+                            <span class="font-medium">Telefone:</span>
+                            <span class="ml-2">${usuario.telefone}</span>
+                        </div>
+                        
+                        <div class="flex items-center border-b border-base-300 pb-2">
+                            <span class="font-medium">Data de Nascimento:</span>
+                            <span class="ml-2">${
+                              usuario.datanascimento
+                                ? new Date(
+                                    usuario.datanascimento
+                                  ).toLocaleDateString()
+                                : "Não disponível"
+                            }</span>
+                        </div>
+                        
+                        <div class="flex items-center border-b border-base-300 pb-2">
+                            <span class="font-medium">Tipo de Usuário:</span>
+                            <span class="ml-2">${this.formatarTipoUsuario(
+                              usuario.tipousuario
+                            )}</span>
                         </div>
                     </div>
+
+                    <!-- Status -->
+                    <div class="mt-6">
+                        <h4 class="text-lg font-semibold mb-3">Status da Jornada</h4>
+                        <div class="grid gap-4">
+                            <div class="flex items-center justify-between">
+                                <span>Batismo</span>
+                                <span class="badge ${
+                                  usuario.concluiubatismo
+                                    ? "badge-primary"
+                                    : "badge-ghost"
+                                }">${
+      usuario.concluiubatismo ? "Sim" : "Não"
+    }</span>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <span>Café com Líderes</span>
+                                <span class="badge ${
+                                  usuario.participoucafe
+                                    ? "badge-primary"
+                                    : "badge-ghost"
+                                }">${
+      usuario.participoucafe ? "Sim" : "Não"
+    }</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <!-- Participação -->
+                    <div class="mt-6">
+                        <div class="grid grid-cols-2 gap-4">
+                            <!-- Ministério -->
+                            <div class="col-span-1">
+                                <h4 class="text-lg font-semibold mb-3">Ministério</h4>
+                                <div class="p-4 bg-base-200 rounded-lg">
+                                    ${
+                                      usuario.participaministerio
+                                        ? `<p class="text-sm">${usuario.nomeministerio}</p>`
+                                        : `<p class="text-sm text-base-content/70">Não participa de ministério</p>`
+                                    }
+                                </div>
+                            </div>
+                            
+                            <!-- Célula -->
+                            <div class="col-span-1">
+                                <h4 class="text-lg font-semibold mb-3">Célula</h4>
+                                <div class="p-4 bg-base-200 rounded-lg">
+                                    ${
+                                      usuario.participacelula
+                                        ? `<p class="text-sm">${usuario.nomecelula}</p>`
+                                        : `<p class="text-sm text-base-content/70">Não participa de célula</p>`
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Cursos -->
+                      <div class="mt-6">
+                          <h4 class="text-lg font-semibold mb-3 text-center">Cursos Concluídos</h4>
+                          
+                          <div class="mt-4">
+                              <h5 class="text-md font-semibold mb-2">Fundamento Cristão</h5>
+                              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  ${this.obterCursosConcluidos(
+                                    usuario,
+                                    "fundamentos"
+                                  )}
+                              </div>
+                          </div>
+
+                          <div class="mt-4">
+                              <h5 class="text-md font-semibold mb-2">Maturidade Cristã</h5>
+                              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  ${this.obterCursosConcluidos(
+                                    usuario,
+                                    "maturidade"
+                                  )}
+                              </div>
+                          </div>
+                      </div>
                 </div>
             </div>
-        `;
+        </div>
+    `;
+  }
+
+  obterCursosConcluidos(usuario, categoria) {
+    const cursos = {
+      fundamentos: [
+        { id: "cursomeunovocaminho", nome: "Meu Novo Caminho" },
+        { id: "cursovidadevocional", nome: "Vida Devocional" },
+        { id: "cursofamiliacrista", nome: "Família Cristã" },
+        { id: "cursovidaprosperidade", nome: "Vida de Prosperidade" },
+      ],
+      maturidade: [
+        { id: "cursoprincipiosautoridade", nome: "Princípios de Autoridade" },
+        { id: "cursovidaespirito", nome: "Vida no Espírito" },
+        { id: "cursocaratercristo", nome: "Caráter de Cristo" },
+        { id: "cursoidentidadesrestauradas", nome: "Identidades Restauradas" },
+      ],
+    };
+
+    return cursos[categoria]
+      .filter((curso) => usuario[curso.id])
+      .map(
+        (curso) => `
+                <div class="p-3 bg-base-200 rounded-lg">
+                    <p>${curso.nome}</p>
+                </div>
+            `
+      )
+      .join("");
   }
 
   gerarCardUsuario(usuario) {
@@ -369,21 +502,6 @@ class DashboardManager {
     });
   }
 
-  definirTipoUsuario(tipoUsuario) {
-    this.tipoUsuarioAtual = tipoUsuario;
-    this.controlarVisibilidadeBotoes();
-  }
-
-  controlarVisibilidadeBotoes() {
-    if (this.btnRelatorio) {
-      if (this.tipoUsuarioAtual === "UsuarioComum") {
-        this.btnRelatorio.style.display = "none";
-      } else {
-        this.btnRelatorio.style.display = "block";
-      }
-    }
-  }
-
   adicionarBotoesAcao(usuario) {
     const acoesUsuario = document.querySelector("#acoesUsuario");
     if (!acoesUsuario) return;
@@ -417,6 +535,21 @@ class DashboardManager {
         }
       }
       acoesUsuario.innerHTML = botoesHTML;
+    }
+  }
+
+  definirTipoUsuario(tipoUsuario) {
+    this.tipoUsuarioAtual = tipoUsuario;
+    this.controlarVisibilidadeBotoes();
+  }
+
+  controlarVisibilidadeBotoes() {
+    if (this.btnRelatorio) {
+      if (this.tipoUsuarioAtual === "UsuarioComum") {
+        this.btnRelatorio.style.display = "none";
+      } else {
+        this.btnRelatorio.style.display = "block";
+      }
     }
   }
 

@@ -248,11 +248,20 @@ body {
 }
 
 /* Toggle Modo Escuro */
-#btnToggleDarkMode {
-  @apply transition-transform duration-300;
+.swap.swap-rotate {
+  @apply transition-transform duration-300 z-50;
 }
 
-#btnToggleDarkMode:hover {
+.swap.swap-rotate:hover {
+  @apply transform rotate-180;
+}
+
+/* Estilos gerais para os botões de tema */
+.swap.swap-rotate {
+  @apply transition-transform duration-300 z-50;
+}
+
+.swap.swap-rotate:hover {
   @apply transform rotate-180;
 }
 
@@ -488,5 +497,10 @@ textarea.input-error {
   /* Cards */
   .card {
     @apply mx-2;
+  }
+
+  /* Ajustes para o botão de modo escuro no modo responsivo */
+  #btnToggleDarkMode {
+    @apply top-2 right-2;
   }
 }

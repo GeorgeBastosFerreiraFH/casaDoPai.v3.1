@@ -21,6 +21,7 @@ class DashboardManager {
     this.modalContainer = document.querySelector("#modalContainer");
     this.modalTitle = document.querySelector("#modalTitle");
     this.modalContent = document.querySelector("#modalContent");
+    this.btnRelatorio = document.getElementById("btnRelatorio");
     this.btnCloseModal = document.querySelector("#btnCloseModal");
     this.btnLogout = document.querySelector("#btnLogout");
     this.loadingOverlay = document.querySelector("#loadingOverlay");
@@ -366,6 +367,21 @@ class DashboardManager {
         listaCursos.innerHTML += `<li class="ml-4">${curso.nome}</li>`;
       }
     });
+  }
+
+  definirTipoUsuario(tipoUsuario) {
+    this.tipoUsuarioAtual = tipoUsuario;
+    this.controlarVisibilidadeBotoes();
+  }
+
+  controlarVisibilidadeBotoes() {
+    if (this.btnRelatorio) {
+      if (this.tipoUsuarioAtual === "UsuarioComum") {
+        this.btnRelatorio.style.display = "none";
+      } else {
+        this.btnRelatorio.style.display = "block";
+      }
+    }
   }
 
   adicionarBotoesAcao(usuario) {
@@ -972,8 +988,10 @@ class DashboardManager {
 const dashboardManager = new DashboardManager();
 
 // Exportar funções para uso global
-export const carregarDashboard = (tipoUsuario, idUsuario, idCelula) =>
+export const carregarDashboard = (tipoUsuario, idUsuario, idCelula) => {
+  dashboardManager.definirTipoUsuario(tipoUsuario); // Adiciona esta linha
   dashboardManager.carregarDashboard(tipoUsuario, idUsuario, idCelula);
+};
 
 // Expor métodos para uso global
 window.editarUsuario = (id) => dashboardManager.editarUsuario(id);

@@ -388,6 +388,14 @@ class FormManager {
     const usuarioLogado = storageManager.getUsuarioLogado();
     const formularioAtivo = getEstadoFormulario();
 
+    // Verificar se há um token na URL para redefinição de senha
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+    if (token) {
+      mostrarRedefinirForm(token);
+      return;
+    }
+
     if (usuarioLogado) {
       this.mostrarDashboard(usuarioLogado);
     } else if (formularioAtivo === "cadastro") {

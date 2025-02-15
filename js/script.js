@@ -248,6 +248,20 @@ function senhaRedefinidaComSucesso() {
   }, 2000);
 }
 
+function mostrarLoading() {
+  const loadingOverlay = document.querySelector("#loadingOverlay");
+  if (loadingOverlay) {
+    mostrarElemento(loadingOverlay);
+  }
+}
+
+function ocultarLoading() {
+  const loadingOverlay = document.querySelector("#loadingOverlay");
+  if (loadingOverlay) {
+    ocultarElemento(loadingOverlay);
+  }
+}
+
 class FormManager {
   constructor() {
     this.inicializarElementos();
@@ -929,7 +943,7 @@ class FormManager {
     if (!this.validarSenhasRedefinicao(novaSenha, confirmaSenha)) return;
 
     try {
-      this.mostrarLoading();
+      mostrarLoading();
 
       const response = await fetch(
         "https://casadopai-v3.onrender.com/atualizar-senha",
@@ -953,7 +967,7 @@ class FormManager {
       console.error("Erro:", error);
       mostrarToast(error.message || "Erro ao atualizar senha", "error");
     } finally {
-      this.ocultarLoading();
+      ocultarLoading();
     }
   }
 

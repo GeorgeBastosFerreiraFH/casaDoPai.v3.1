@@ -209,9 +209,7 @@ async function redefinirSenha(token) {
     senhaRedefinidaComSucesso();
   } catch (error) {
     console.error("Erro:", error);
-    if (error.message !== "Token inválido") {
-      mostrarToast(error.message || "Erro ao atualizar senha", "error");
-    }
+    mostrarToast(error.message || "Erro ao atualizar senha", "error");
   } finally {
     ocultarLoading();
   }
@@ -230,7 +228,7 @@ function validarSenhasRedefinicao(novaSenha, confirmaSenha) {
     return false;
   }
 
-  if (novaSenha !== confirmaSenha) {
+  if (novaSenha !== confirmeSenha) {
     mostrarToast("As senhas não coincidem", "error");
     return false;
   }
@@ -967,9 +965,7 @@ class FormManager {
       this.senhaRedefinidaComSucesso();
     } catch (error) {
       console.error("Erro:", error);
-      if (error.message !== "Token inválido") {
-        mostrarToast(error.message || "Erro ao atualizar senha", "error");
-      }
+      mostrarToast(error.message || "Erro ao atualizar senha", "error");
     } finally {
       ocultarLoading();
     }

@@ -62,7 +62,124 @@ document.addEventListener("DOMContentLoaded", () => {
       toggleConfirmeSenhaCadastro
     );
   });
+
+  // Redefinir Senha - Nova Senha
+  const toggleSenhaNova = document.getElementById("toggleSenhaNova");
+  const novaSenha = document.getElementById("novaSenha");
+
+  toggleSenhaNova.addEventListener("click", () => {
+    togglePasswordVisibility(novaSenha, toggleSenhaNova);
+  });
+
+  // Redefinir Senha - Confirmar Nova Senha
+  const toggleConfirmeSenhaNova = document.getElementById(
+    "toggleConfirmeSenhaNova"
+  );
+  const confirmaSenhaNova = document.getElementById("confirmaSenhaNova");
+
+  toggleConfirmeSenhaNova.addEventListener("click", () => {
+    togglePasswordVisibility(confirmaSenhaNova, toggleConfirmeSenhaNova);
+  });
+
+  // Força da senha - Redefinir Senha
+  novaSenha.addEventListener("input", () => verificarForcaSenhaNova());
+  confirmaSenhaNova.addEventListener("input", () => verificarForcaSenhaNova());
+
+  // Verificar se há um token na URL para redefinição de senha
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get("token");
+  if (token) {
+    mostrarRedefinirForm(token);
+  } else {
+    new FormManager();
+  }
 });
+
+function mostrarRedefinirForm(token) {
+  const redefinirForm = document.getElementById("redefinirForm");
+  const loginForm = document.getElementById("loginForm");
+
+  if (redefinirForm && loginForm) {
+    ocultarElemento(loginForm);
+    mostrarElemento(redefinirForm);
+  }
+
+  // Adicionar o token ao formulário de redefinição de senha
+  const btnRedefinirSenha = document.getElementById("btnRedefinirSenha");
+  btnRedefinirSenha.addEventListener("click", () => redefinirSenha(token));
+}
+
+function verificarForcaSenhaNova() {
+  const novaSenha = document.getElementById("novaSenha").value;
+  const confirmaSenhaNova = document.getElementById("confirmaSenhaNova").value;
+  const forcaSenhaNova = document.getElementById("forcaSenhaNova");
+  const forcaSenhaNovaTexto = document.getElementById("forcaSenhaNovaTexto");
+
+  if (!novaSenha || !forcaSenhaNova || !forcaSenhaNovaTexto) return;
+
+  const forca = calcularForcaSenha(novaSenha);
+  atualizarIndicadorForcaSenha(
+    forca,
+    forcaSenhaNova,
+    forcaSenhaNovaTexto,
+    novaSenha,
+    confirmaSenhaNova
+  );
+}
+
+function calcularForcaSenha(senha) {
+  let forca = 0;
+  if (senha.length >= 8) forca += 20;
+  if (senha.match(/[a-z]+/)) forca += 20;
+  if (senha.match(/[A-Z]+/)) forca += 20;
+  if (senha.match(/[0-9]+/)) forca += 20;
+  if (senha.match(/[$@#&!]+/)) forca += 20;
+  return forca;
+}
+
+function atualizarIndicadorForcaSenha(
+  forca,
+  elemento,
+  texto,
+  senha,
+  confirmeSenha
+) {
+  elemento.value = forca;
+
+  if (confirmeSenha && senha !== confirmeSenha) {
+    texto.textContent = "As senhas não coincidem";
+    atualizarClassesForcaSenha(elemento, "error");
+    return;
+  }
+
+  const forcas = {
+    100: { texto: "Muito Forte", classe: "success" },
+    80: { texto: "Forte", classe: "success" },
+    60: { texto: "Média", classe: "warning" },
+    40: { texto: "Fraca", classe: "error" },
+    0: { texto: "Muito Fraca", classe: "error" },
+  };
+
+  // Verifica os níveis em ordem decrescente
+  for (const [limite, config] of Object.entries(forcas).sort(
+    (a, b) => b[0] - a[0]
+  )) {
+    if (forca >= Number(limite)) {
+      texto.textContent = `Força da senha: ${config.texto}`;
+      atualizarClassesForcaSenha(elemento, config.classe);
+      break;
+    }
+  }
+}
+
+function atualizarClassesForcaSenha(elemento, tipo) {
+  elemento.classList.remove(
+    "progress-success",
+    "progress-warning",
+    "progress-error"
+  );
+  elemento.classList.add(`progress-${tipo}`);
+}
 
 class FormManager {
   constructor() {
@@ -725,19 +842,13 @@ class FormManager {
   }
 
   // Redefinição de Senha
-  async redefinirSenha() {
+  async redefinirSenha(token) {
     const { novaSenha, confirmaSenha } = this.obterSenhasRedefinicao();
 
     if (!this.validarSenhasRedefinicao(novaSenha, confirmaSenha)) return;
 
     try {
       this.mostrarLoading();
-      const token = new URLSearchParams(window.location.search).get("token");
-
-      if (!token) {
-        mostrarToast("Token não encontrado", "error");
-        return;
-      }
 
       const response = await fetch(
         "https://casadopai-v3.onrender.com/atualizar-senha",

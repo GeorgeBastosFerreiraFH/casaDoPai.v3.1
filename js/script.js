@@ -728,6 +728,12 @@ class FormManager {
   async mostrarRecuperacaoSenha(e) {
     e.preventDefault();
 
+    // Remover qualquer modal existente
+    const existingModal = document.getElementById("formRecuperacaoSenha");
+    if (existingModal) {
+      existingModal.remove();
+    }
+
     const formulario = `
             <div id="formRecuperacaoSenha" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
                 <div class="modal modal-open">

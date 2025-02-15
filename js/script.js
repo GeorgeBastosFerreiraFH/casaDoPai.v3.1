@@ -181,6 +181,73 @@ function atualizarClassesForcaSenha(elemento, tipo) {
   elemento.classList.add(`progress-${tipo}`);
 }
 
+async function redefinirSenha(token) {
+  const { novaSenha, confirmaSenha } = obterSenhasRedefinicao();
+
+  if (!validarSenhasRedefinicao(novaSenha, confirmaSenha)) return;
+
+  try {
+    mostrarLoading();
+
+    const response = await fetch(
+      "https://casadopai-v3.onrender.com/atualizar-senha",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token, novaSenha }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Erro ao atualizar senha");
+    }
+
+    senhaRedefinidaComSucesso();
+  } catch (error) {
+    console.error("Erro:", error);
+    mostrarToast(error.message || "Erro ao atualizar senha", "error");
+  } finally {
+    ocultarLoading();
+  }
+}
+
+function obterSenhasRedefinicao() {
+  return {
+    novaSenha: document.querySelector("#novaSenha")?.value,
+    confirmaSenha: document.querySelector("#confirmaSenhaNova")?.value,
+  };
+}
+
+function validarSenhasRedefinicao(novaSenha, confirmaSenha) {
+  if (!novaSenha || !confirmaSenha) {
+    mostrarToast("Por favor, preencha todos os campos", "error");
+    return false;
+  }
+
+  if (novaSenha !== confirmaSenha) {
+    mostrarToast("As senhas não coincidem", "error");
+    return false;
+  }
+
+  if (novaSenha.length < 8) {
+    mostrarToast("A senha deve ter no mínimo 8 caracteres", "error");
+    return false;
+  }
+
+  return true;
+}
+
+function senhaRedefinidaComSucesso() {
+  mostrarToast("Senha atualizada com sucesso!", "success");
+  setTimeout(() => {
+    window.location.href = "/";
+  }, 2000);
+}
+
 class FormManager {
   constructor() {
     this.inicializarElementos();
